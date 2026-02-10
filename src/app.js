@@ -3,12 +3,16 @@ import dotenv from 'dotenv'
 import sequelize from './config/db.js'
 import './models/user.js'
 import authRoutes from './routes/authRoutes.js'
+import serviceRoutes from './routes/serviceRoutes.js'
+import appointmentRoutes from './routes/appointmentRoutes.js'
 
 dotenv.config()
 
 const app = express()
 app.use(express.json())
 app.use('/api/auth', authRoutes)
+app.use('/api/services', serviceRoutes)
+app.use('/api/appointments', appointmentRoutes)
 
 const PORT = process.env.PORT || 3000
 
@@ -20,7 +24,7 @@ try {
   console.log('✅ Database models synced.')
 
   app.listen(PORT, () => {
-    console.log(`🚀 Server ready at http://localhost:${PORT}`)
+    console.log(`Server ready at http://localhost:${PORT}`)
   })
 } catch (error) {
   console.error('❌ Database connection failed:', error)
