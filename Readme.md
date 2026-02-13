@@ -43,8 +43,7 @@ Knowledge about Backend Development:
 ## Command line steps
 
 - $ `git clone https://github.com/SalahVincent/service-marketplace-api.git`
-- $ `cd service-marketplace-api`
-- $ `git checkout main`
+- $ `git checkout dev`
 
 ## Start App
 
