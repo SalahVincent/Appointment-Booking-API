@@ -35,3 +35,22 @@ export const getAllServices = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+export const deleteService = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const providerId = req.user.id;
+
+    const service = await Service.findOne({ where: { id, providerId } });
+
+    if (!service) {
+      return res.status(404).json({ message: "Service not found or you don't have permission." });
+    }
+
+    await service.destroy();
+
+    res.status(200).json({ message: "Service and associated data deleted successfully." });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};

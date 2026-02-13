@@ -5,6 +5,8 @@ import './models/user.js'
 import authRoutes from './routes/authRoutes.js'
 import serviceRoutes from './routes/serviceRoutes.js'
 import appointmentRoutes from './routes/appointmentRoutes.js'
+import YAML from 'yamljs'
+import swaggerUi from 'swagger-ui-express'
 
 dotenv.config()
 
@@ -13,6 +15,9 @@ app.use(express.json())
 app.use('/api/auth', authRoutes)
 app.use('/api/services', serviceRoutes)
 app.use('/api/appointments', appointmentRoutes)
+
+const swaggerDocument = YAML.load('./swagger.yaml');
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 const PORT = process.env.PORT || 3000
 

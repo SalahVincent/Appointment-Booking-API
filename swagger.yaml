@@ -1,0 +1,239 @@
+openapi: 3.0.0
+info:
+  title: Service Marketplace API
+  version: 1.0.0
+  description: API for managing service providers and client bookings.
+
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+paths:
+  /api/auth/register:
+    post:
+      tags:
+        - Auth
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                email: { type: string }
+                password: { type: string }
+                role: { type: string, enum: [client, provider] }
+      responses:
+        "201":
+          description: Created
+
+  /api/auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Login to get token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string }
+                password: { type: string }
+      responses:
+        "200":
+          description: Success
+
+  
+  /api/auth/profile:
+    get:
+      tags:
+        - Profile
+      summary: Get current user profile
+      description: Returns the details of the currently logged-in user based on the JWT token.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User profile data retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: { type: integer }
+                  name: { type: string }
+                  email: { type: string }
+                  role: { type: string, enum: [client, provider] }
+        '401':
+          description: Unauthorized - Valid token required.
+
+  /api/services:
+    get:
+      tags:
+        - Services
+      summary: Get all services
+      responses:
+        "200":
+          description: List of services
+    post:
+      tags:
+        - Services
+      summary: Create a service (Providers Only)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                description: { type: string }
+                price: { type: number }
+      responses:
+        "201":
+          description: Created
+
+  /api/services/{id}:
+    delete:
+      tags:
+        - Services
+      summary: Delete a service (Providers Only)
+      description: Deletes a service and all its associated appointments (Cascading).
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the service to delete
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Service and associated data deleted successfully.
+        "404":
+          description: Service not found or unauthorized.
+        "500":
+          description: Server error.
+
+  /api/appointments:
+    get:
+      tags:
+        - Appointments
+      summary: View my dashboard (Context-aware)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Success
+    post:
+      tags:
+        - Appointments
+      summary: Book an appointment (Clients Only)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                serviceId: { type: integer }
+                date: { type: string, format: date-time }
+      responses:
+        "201":
+          description: Booked
+
+  
+  /api/appointments/{id}/status:
+    patch:
+      tags:
+        - Appointments
+      summary: Update appointment status (Providers Only)
+      description: Allows a provider to change the status of an appointment (e.g., to 'confirmed' or 'completed').
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the appointment to update
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [pending, confirmed, completed, cancelled]
+                  example: confirmed
+      responses:
+        '200':
+          description: Status updated successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+                  appointment:
+                    type: object
+                    properties:
+                      id: { type: integer }
+                      status: { type: string }
+        '403':
+          description: Forbidden - Only the service provider can update the status.
+        '404':
+          description: Appointment not found.
+
+  /api/appointments/{id}/cancel:
+    patch:
+      tags:
+        - Appointments
+      summary: Cancel an appointment
+      description: Allows a Client or Provider to cancel an existing appointment.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the appointment to cancel
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Appointment cancelled successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+                  appointment:
+                    type: object
+                    properties:
+                      id: { type: integer }
+                      status: { type: string, example: "cancelled" }
+        '403':
+          description: Unauthorized - You can only cancel your own appointments.
+        '404':
+          description: Appointment not found.
