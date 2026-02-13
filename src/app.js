@@ -19,7 +19,11 @@ app.use('/api/appointments', appointmentRoutes)
 const swaggerDocument = YAML.load('./swagger.yaml');
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-const PORT = process.env.PORT || 3000
+const PORT = process.env.PORT || 3000; // Use Render's port or default to 3000 locally
+
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server is running on port ${PORT}`);
+});
 
 try {
   await sequelize.authenticate()

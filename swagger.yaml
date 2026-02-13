@@ -5,6 +5,8 @@ info:
   description: API for managing service providers and client bookings.
 
 servers:
+  - url: https://appointment-booking-api-ybpu.onrender.com
+    description: Production server
   - url: http://localhost:3000
     description: Local development server
 
