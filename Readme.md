@@ -2,12 +2,12 @@
 
 ## App
 
-![Swagger Interface](https://raw.githubusercontent.com/swagger-api/swagger-ui/master/docs/img/readme_screenshot.png)
-![API Testing Dashboard](./assets/api_preview.png)
+![Swagger Interface](https://raw.githubusercontent.com/swagger-api/swagger.io/wordpress/images/assets/SWU-logo-clr.png)
+![API Testing Dashboard](./assets/testing-preview.png)
 
 ## About
 
-This project is a comprehensive backend system for a professional service market. It enables a workflow between **Service Providers** and **Clients**. The API handles everything from user onboarding to complex appointment lifecycles.
+This project is a comprehensive backend system for a professional service market. It enables a workflow between **Appointment Service Providers** and **Clients**. The API handles everything from user onboarding to complex appointment lifecycles.
 
 Key features include:
 - **RBAC (Role-Based Access Control):** Distinct permissions for Clients and Providers.
@@ -42,7 +42,7 @@ Knowledge about Backend Development:
 
 ## Command line steps
 
-- $ `git clone https://github.com/SalahVincent/service-marketplace-api.git`
+- $ `git clone https://github.com/SalahVincent/Appointment-Booking-API`
 - $ `git checkout dev`
 
 ## Start App
@@ -58,7 +58,7 @@ Knowledge about Backend Development:
 
 ## Author
 
-👤 **Vincent Salah**
+**Vincent Salah**
 
 - GitHub: [@SalahVincent](https://github.com/SalahVincent)
 

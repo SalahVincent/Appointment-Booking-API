@@ -1,5 +1,6 @@
 import { Appointment, Service, User } from '../models/index.js';
 import { Op } from 'sequelize'
+import { getIO } from '../sockets/socketHandler.js'
 
 export const createAppointment = async (req, res) => {
   try {
@@ -23,11 +24,32 @@ export const createAppointment = async (req, res) => {
       return res.status(409).json({ message: "This time slot is already booked for this service." });
     }
 
+    console.log(`Received booking request for service ID: ${serviceId}`)
+
+    const service = await Service.findByPk(serviceId)
+      if (!service) {
+        console.log(`Service with ID ${serviceId} not found.`)
+        return res.status(404).json({ message: 'service not found'})
+      }
+
+      console.log(`Service belongs to Provider ID: ${service.providerId}`)
+
     const appointment = await Appointment.create({
       serviceId,
       clientId,
+      date: appointmentDate,
+      status: 'pending'
+    });
+
+
+      const io = getIO();
+    io.to(`user_${service.providerId}`).emit('appointment_booked', {
+      message: 'You have a new appointment booking!',
+      appointmentId: appointment.id,
+      serviceId,
       date: appointmentDate
     });
+   
 
     res.status(201).json(appointment);
   } catch (error) {
@@ -122,6 +144,25 @@ export const cancelAppointment = async (req, res, next) => {
 
     appointment.status = 'cancelled';
     await appointment.save();
+
+    try {
+  const io = getIO();
+  const providerId = appointment.service.providerId; // Access it through the appointment
+  const clientId = appointment.clientId;
+
+  const notificationData = {
+    message: `Appointment #${id} has been cancelled.`,
+    appointmentId: id
+  };
+
+  // Notify both rooms
+  io.to(`user_${clientId}`).emit('appointment_cancelled', notificationData);
+  io.to(`user_${providerId}`).emit('appointment_cancelled', notificationData);
+  
+  console.log(`🚫 Cancellation alerts sent to Client ${clientId} and Provider ${providerId}`);
+} catch (socketError) {
+  console.error("Socket notification failed:", socketError.message);
+}
 
     res.status(200).json({
       message: "Appointment cancelled successfully.",

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+</head>
+<body>
+    <h1>Provider Notification Dashboard</h1>
+    <div id="status">Status: Disconnected</div>
+    <ul id="notifications"></ul>
+
+    <script>
+        const socket = io('http://localhost:3000')
+        const statusDiv = document.getElementById('status');
+        const list = document.getElementById('notifications');
+
+        socket.on('connect', () => {
+            statusDiv.innerText = 'Status: Connected! ID: ' + socket.id;
+
+            socket.emit('join', 1)
+            console.log('Joined room: user_1');
+        });
+
+        socket.on('appointment_booked', (data) => {
+            const li = document.createElement('li');
+            li.innerText = `${data.message} (Appointment ID: ${data.appointmentId}, Service ID: ${data.serviceId}, Date: ${new Date(data.date).toLocaleString()})`;
+            list.appendChild(li);
+        });
+    </script>
+</body>
+</html>

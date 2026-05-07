@@ -7,10 +7,15 @@ import serviceRoutes from './routes/serviceRoutes.js'
 import appointmentRoutes from './routes/appointmentRoutes.js'
 import YAML from 'yamljs'
 import swaggerUi from 'swagger-ui-express'
+import { initSocket } from './sockets/socketHandler.js'
+import http from 'http'
 
 dotenv.config()
 
 const app = express()
+const httpServer = http.createServer(app)
+initSocket(httpServer)
+
 app.use(express.json())
 app.use('/api/auth', authRoutes)
 app.use('/api/services', serviceRoutes)
@@ -19,11 +24,7 @@ app.use('/api/appointments', appointmentRoutes)
 const swaggerDocument = YAML.load('./swagger.yaml');
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-const PORT = process.env.PORT || 3000; // Use Render's port or default to 3000 locally
-
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+const PORT = process.env.PORT || 3000;
 
 try {
   await sequelize.authenticate()
@@ -32,8 +33,8 @@ try {
   await sequelize.sync({ alter: true })
   console.log('✅ Database models synced.')
 
-  app.listen(PORT, () => {
-    console.log(`Server ready at http://localhost:${PORT}`)
+  httpServer.listen(PORT, () => {
+    console.log(`Server and WebSockets ready at http://localhost:${PORT}`)
   })
 } catch (error) {
   console.error('❌ Database connection failed:', error)

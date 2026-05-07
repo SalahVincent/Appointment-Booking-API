@@ -14,6 +14,22 @@ const Appointment = sequelize.define('appointment', {
   status: {
     type: DataTypes.ENUM('pending', 'confirmed', 'cancelled', 'completed'),
     defaultValue: 'pending'
+  },
+  clientId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'users',
+      key: 'id'
+    }
+  },
+  serviceId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'services',
+      key: 'id'
+    }
   }
 })
 
