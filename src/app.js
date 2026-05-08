@@ -9,6 +9,7 @@ import YAML from 'yamljs'
 import swaggerUi from 'swagger-ui-express'
 import { initSocket } from './sockets/socketHandler.js'
 import http from 'http'
+import slotRoutes from './routes/slotRoutes.js'
 
 dotenv.config()
 
@@ -17,6 +18,8 @@ const httpServer = http.createServer(app)
 initSocket(httpServer)
 
 app.use(express.json())
+
+app.use('/api/slots', slotRoutes)
 app.use('/api/auth', authRoutes)
 app.use('/api/services', serviceRoutes)
 app.use('/api/appointments', appointmentRoutes)

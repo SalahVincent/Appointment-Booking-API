@@ -1,8 +1,8 @@
 openapi: 3.0.0
 info:
-  title: Service Marketplace API
+  title: Appointment Booking API
   version: 1.0.0
-  description: API for managing service providers and client bookings.
+  description: A RESTful API for managing appointment bookings between clients and service providers. This API allows users to register, log in, view and manage their profiles, create and delete services (for providers), book appointments (for clients), and update or cancel appointments through available time slots. The API uses JWT for authentication and includes role-based access control to ensure that only authorized users can perform certain actions.
 
 servers:
   - url: https://appointment-booking-api-ybpu.onrender.com

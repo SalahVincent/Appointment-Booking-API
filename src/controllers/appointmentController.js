@@ -1,12 +1,21 @@
-import { Appointment, Service, User } from '../models/index.js';
+import { Appointment, Service, User, TimeSlot } from '../models/index.js';
 import { Op } from 'sequelize'
 import { getIO } from '../sockets/socketHandler.js'
 
 export const createAppointment = async (req, res) => {
   try {
-    const { serviceId, date } = req.body;
+    const { serviceId, date, slotId } = req.body;
     const clientId = req.user.id;
     const appointmentDate = new Date(date);
+
+    const slot = await TimeSlot.findByPk(slotId);
+    if (!slot) {
+      return res.status(404).json({ message: "Time slot not found." });
+    }
+
+    if (slot.isBooked) {
+      return res.status(409).json({ message: "This time slot is already booked." });
+    }
 
     if (appointmentDate < new Date()) {
       return res.status(400).json({ message: "You cannot book an appointment in the past." });
@@ -37,14 +46,23 @@ export const createAppointment = async (req, res) => {
     const appointment = await Appointment.create({
       serviceId,
       clientId,
+      slotId,
       date: appointmentDate,
       status: 'pending'
     });
 
+    slot.isBooked = true;
+    await slot.save();
+
 
       const io = getIO();
     io.to(`user_${service.providerId}`).emit('appointment_booked', {
-      message: 'You have a new appointment booking!',
+      message: 'You have a new appointment booking time slot!',
+      slotDetails: {
+        date: slot.date,
+        startTime: slot.startTime,
+        endTime: slot.endTime
+      },
       appointmentId: appointment.id,
       serviceId,
       date: appointmentDate
