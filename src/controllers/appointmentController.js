@@ -4,58 +4,53 @@ import { getIO } from '../sockets/socketHandler.js'
 
 export const createAppointment = async (req, res) => {
   try {
-    const { serviceId, date, slotId } = req.body;
-    const clientId = req.user.id;
-    const appointmentDate = new Date(date);
+    const { serviceId, slotId } = req.body
+    const clientId = req.user.id
 
-    const slot = await TimeSlot.findByPk(slotId);
+    const slot = await TimeSlot.findByPk(slotId)
     if (!slot) {
-      return res.status(404).json({ message: "Time slot not found." });
+      return res.status(404).json({ message: "Time slot not found." })
     }
 
     if (slot.isBooked) {
-      return res.status(409).json({ message: "This time slot is already booked." });
+      return res.status(409).json({ message: "This time slot is already booked." })
     }
 
-    if (appointmentDate < new Date()) {
-      return res.status(400).json({ message: "You cannot book an appointment in the past." });
+    const appointmentDate = new Date(slot.date); 
+
+    if (appointmentDate < new Date().setHours(0,0,0,0)) {
+      return res.status(400).json({ message: "You cannot book a time slot in the past." })
     }
 
     const existingAppointment = await Appointment.findOne({
       where: {
         serviceId,
-        date: appointmentDate,
+        slotId,
         status: { [Op.ne]: 'cancelled' }
       }
-    });
+    })
 
     if (existingAppointment) {
-      return res.status(409).json({ message: "This time slot is already booked for this service." });
+      return res.status(409).json({ message: "This time slot is already booked for this service." })
     }
 
-    console.log(`Received booking request for service ID: ${serviceId}`)
-
     const service = await Service.findByPk(serviceId)
-      if (!service) {
-        console.log(`Service with ID ${serviceId} not found.`)
-        return res.status(404).json({ message: 'service not found'})
-      }
-
-      console.log(`Service belongs to Provider ID: ${service.providerId}`)
+    if (!service) {
+      return res.status(404).json({ message: 'Service not found' })
+    }
 
     const appointment = await Appointment.create({
       serviceId,
       clientId,
       slotId,
-      date: appointmentDate,
+      date: slot.date,
       status: 'pending'
-    });
+    })
 
-    slot.isBooked = true;
-    await slot.save();
+    slot.isBooked = true
+    await slot.save()
 
-
-      const io = getIO();
+    const io = getIO()
     io.to(`user_${service.providerId}`).emit('appointment_booked', {
       message: 'You have a new appointment booking time slot!',
       slotDetails: {
@@ -65,22 +60,21 @@ export const createAppointment = async (req, res) => {
       },
       appointmentId: appointment.id,
       serviceId,
-      date: appointmentDate
-    });
-   
-
-    res.status(201).json(appointment);
+      date: slot.date
+    })
+    
+    res.status(201).json(appointment)
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: error.message })
   }
 }
 
 export const getMyAppointments = async (req, res) => {
   try {
-    const userId = req.user.id;
-    const userRole = req.user.role;
+    const userId = req.user.id
+    const userRole = req.user.role
 
-    let appointments;
+    let appointments
 
     if (userRole === 'client') {
 
@@ -91,7 +85,7 @@ export const getMyAppointments = async (req, res) => {
           as: 'service',
           include: [{ model: User, as: 'provider', attributes: ['name'] }] 
         }]
-      });
+      })
     } else {
 
       appointments = await Appointment.findAll({
@@ -104,89 +98,92 @@ export const getMyAppointments = async (req, res) => {
           as: 'client',
           attributes: ['name', 'email']
         }]
-      });
+      })
     }
 
     res.status(200).json(appointments);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: error.message })
   }
-};
+}
 
 export const updateAppointmentStatus = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { status } = req.body;
-    const providerId = req.user.id;
+    const { id } = req.params
+    const { status } = req.body
+    const providerId = req.user.id
 
     const appointment = await Appointment.findByPk(id, {
       include: [{ model: Service, as: 'service' }]
-    });
+    })
 
     if (!appointment) {
-      return res.status(404).json({ message: 'Appointment not found' });
+      return res.status(404).json({ message: 'Appointment not found' })
     }
 
     if (appointment.service.providerId !== providerId) {
-      return res.status(403).json({ message: 'Not authorized to update this appointment' });
+      return res.status(403).json({ message: 'Not authorized to update this appointment' })
     }
 
-    appointment.status = status;
-    await appointment.save();
+    appointment.status = status
+    await appointment.save()
 
-    res.status(200).json({ message: `Appointment ${status}`, appointment });
+    res.status(200).json({ message: `Appointment ${status}`, appointment })
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: error.message })
   }
-};
+}
 
 export const cancelAppointment = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const userId = req.user.id;
+    const { id } = req.params
+    const userId = req.user.id
 
     const appointment = await Appointment.findByPk(id, {
       include: [{ model: Service, as: 'service' }]
-    });
+    })
 
     if (!appointment) {
-      return res.status(404).json({ message: "Appointment not found." });
+      return res.status(404).json({ message: "Appointment not found." })
     }
 
-    const isClient = appointment.clientId === userId;
-    const isProvider = appointment.service.providerId === userId;
+    const isClient = appointment.clientId === userId
+    const isProvider = appointment.service.providerId === userId
 
     if (!isClient && !isProvider) {
-      return res.status(403).json({ message: "Not authorized to cancel this appointment." });
+      return res.status(403).json({ message: "Not authorized to cancel this appointment." })
     }
 
-    appointment.status = 'cancelled';
-    await appointment.save();
+    appointment.status = 'cancelled'
+    await appointment.save()
+
+    if (appointment.slotId) {
+      await TimeSlot.update({ isBooked: false }, { where: { id: appointment.slotId } })
+    }
 
     try {
-  const io = getIO();
-  const providerId = appointment.service.providerId; // Access it through the appointment
-  const clientId = appointment.clientId;
+  const io = getIO()
+  const providerId = appointment.service.providerId
+  const clientId = appointment.clientId
 
   const notificationData = {
     message: `Appointment #${id} has been cancelled.`,
     appointmentId: id
-  };
+  }
 
-  // Notify both rooms
-  io.to(`user_${clientId}`).emit('appointment_cancelled', notificationData);
-  io.to(`user_${providerId}`).emit('appointment_cancelled', notificationData);
+  io.to(`user_${clientId}`).emit('appointment_cancelled', notificationData)
+  io.to(`user_${providerId}`).emit('appointment_cancelled', notificationData)
   
-  console.log(`🚫 Cancellation alerts sent to Client ${clientId} and Provider ${providerId}`);
+  console.log(`🚫 Cancellation alerts sent to Client ${clientId} and Provider ${providerId}`)
 } catch (socketError) {
-  console.error("Socket notification failed:", socketError.message);
+  console.error("Socket notification failed:", socketError.message)
 }
 
     res.status(200).json({
       message: "Appointment cancelled successfully.",
       appointment
-    });
+    })
   } catch (error) {
-    next(error);
+    next(error)
   }
-};
+}
