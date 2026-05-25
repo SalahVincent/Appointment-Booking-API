@@ -13,7 +13,7 @@ import slotRoutes from './routes/slotRoutes.js'
 
 dotenv.config()
 
-const app = express()
+export const app = express()
 const httpServer = http.createServer(app)
 initSocket(httpServer)
 
