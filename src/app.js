@@ -13,7 +13,7 @@ import slotRoutes from './routes/slotRoutes.js'
 
 dotenv.config()
 
-export const app = express()
+const app = express()
 const httpServer = http.createServer(app)
 initSocket(httpServer)
 
@@ -27,19 +27,21 @@ app.use('/api/appointments', appointmentRoutes)
 const swaggerDocument = YAML.load('./swagger.yaml');
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-const PORT = process.env.PORT || 3000;
+// const PORT = process.env.PORT || 3000;
 
-try {
-  await sequelize.authenticate()
-  console.log('✅ Connection to PostgreSQL established.')
+// try {
+//   await sequelize.authenticate()
+//   console.log('✅ Connection to PostgreSQL established.')
 
-  await sequelize.sync({ alter: true })
-  console.log('✅ Database models synced.')
+//   await sequelize.sync({ alter: true })
+//   console.log('✅ Database models synced.')
 
-  httpServer.listen(PORT, () => {
-    console.log(`Server and WebSockets ready at http://localhost:${PORT}`)
-  })
-} catch (error) {
-  console.error('❌ Database connection failed:', error)
-  process.exit(1)
-}
+//   httpServer.listen(PORT, () => {
+//     console.log(`Server and WebSockets ready at http://localhost:${PORT}`)
+//   })
+// } catch (error) {
+//   console.error('❌ Database connection failed:', error)
+//   process.exit(1)
+// }
+
+export { app, httpServer }
