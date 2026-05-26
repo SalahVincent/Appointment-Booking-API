@@ -1,6 +1,5 @@
 import express from 'express'
 import dotenv from 'dotenv'
-import sequelize from './config/db.js'
 import './models/user.js'
 import authRoutes from './routes/authRoutes.js'
 import serviceRoutes from './routes/serviceRoutes.js'

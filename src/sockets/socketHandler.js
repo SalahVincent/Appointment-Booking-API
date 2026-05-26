@@ -1,4 +1,3 @@
-import e from 'express';
 import {Server} from 'socket.io'
 
 let io;

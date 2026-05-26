@@ -5,7 +5,7 @@ import { User, TimeSlot, Service } from '../models/index.js'
 import { generateToken } from '../utils/authUtils.js'
 
 describe('Time Slot & Appointment Integration Tests', () => {
-  let clientToken, providerToken, testService, validSlot
+  let clientToken, /*providerToken*/ testService, validSlot
 
   beforeAll(async () => {
     await sequelize.sync({ force: true })
@@ -24,7 +24,7 @@ describe('Time Slot & Appointment Integration Tests', () => {
       role: 'client'
     })
 
-    providerToken = generateToken(provider)
+    // providerToken = generateToken(provider)
     clientToken = generateToken(client)
 
     testService = await Service.create({

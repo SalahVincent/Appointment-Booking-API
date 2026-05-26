@@ -5,7 +5,7 @@ import { User, Appointment, Service, TimeSlot } from '../models/index.js';
 import { generateToken } from '../utils/authUtils.js';
 
 describe('Appointment Dashboard & Control Tests', () => {
-  let providerToken, clientToken, targetAppointment;
+  let /*clientToken */ providerToken, targetAppointment;
 
   beforeAll(async () => {
     await sequelize.sync({ force: true });
@@ -13,7 +13,7 @@ describe('Appointment Dashboard & Control Tests', () => {
     const provider = await User.create({ name: 'Doc', email: 'doc@test.com', password: '123', role: 'provider' });
     const client = await User.create({ name: 'Guy', email: 'guy@test.com', password: '123', role: 'client' });
     providerToken = generateToken(provider);
-    clientToken = generateToken(client);
+    // clientToken = generateToken(client);
 
     const service = await Service.create({ name: 'Checkup', price: 40, duration: 30, providerId: provider.id });
     const slot = await TimeSlot.create({ date: '2026-08-12', startTime: '09:00:00', endTime: '09:30:00', providerId: provider.id, isBooked: true });

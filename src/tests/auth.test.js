@@ -1,7 +1,6 @@
 import request from 'supertest';
 import { app } from '../app.js'
 import sequelize from '../config/db.js';
-import { User } from '../models/index.js';
 
 describe('Auth Endpoint Tests', () => {
   beforeAll(async () => {
