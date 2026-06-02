@@ -1,0 +1,345 @@
+openapi: 3.0.0
+info:
+  title: Appointment Booking API
+  version: 1.0.0
+  description: A RESTful API for managing appointment bookings between clients and service providers. This API allows users to register, log in, view and manage their profiles, create and delete services (for providers), manage provider availability windows via time slots, book appointments (for clients), and update or cancel appointments through available time slots. The API uses JWT for authentication and includes role-based access control to ensure that only authorized users can perform certain actions.
+
+servers:
+  - url: https://appointment-booking-api-ybpu.onrender.com
+    description: Production server
+  - url: http://localhost:3000
+    description: Local development server
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    TimeSlot:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        date:
+          type: string
+          format: date
+          example: "2026-06-15"
+        startTime:
+          type: string
+          example: "14:00:00"
+        endTime:
+          type: string
+          example: "15:00:00"
+        isBooked:
+          type: boolean
+          example: false
+        providerId:
+          type: integer
+          example: 3
+
+paths:
+  /api/auth/register:
+    post:
+      tags:
+        - Auth
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                email: { type: string }
+                password: { type: string }
+                role: { type: string, enum: [client, provider] }
+      responses:
+        "201":
+          description: Created
+
+  /api/auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Login to get token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string }
+                password: { type: string }
+      responses:
+        "200":
+          description: Success
+
+  /api/auth/profile:
+    get:
+      tags:
+        - Profile
+      summary: Get current user profile
+      description: Returns the details of the currently logged-in user based on the JWT token.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User profile data retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: { type: integer }
+                  name: { type: string }
+                  email: { type: string }
+                  role: { type: string, enum: [client, provider] }
+        '401':
+          description: Unauthorized - Valid token required.
+
+  /api/services:
+    get:
+      tags:
+        - Services
+      summary: Get all services
+      responses:
+        "200":
+          description: List of services
+    post:
+      tags:
+        - Services
+      summary: Create a service (Providers Only)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                description: { type: string }
+                price: { type: number }
+      responses:
+        "201":
+          description: Created
+
+  /api/services/{id}:
+    delete:
+      tags:
+        - Services
+      summary: Delete a service (Providers Only)
+      description: Deletes a service and all its associated appointments (Cascading).
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the service to delete
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Service and associated data deleted successfully.
+        "404":
+          description: Service not found or unauthorized.
+        "500":
+          description: Server error.
+
+  /api/slots:
+    post:
+      tags:
+        - Time Slots
+      summary: Create a new available time slot (Providers Only)
+      description: Allows an authenticated service provider to add specific calendar availability blocks.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - date
+                - startTime
+                - endTime
+              properties:
+                date:
+                  type: string
+                  format: date
+                  example: "2026-06-15"
+                startTime:
+                  type: string
+                  example: "14:00:00"
+                endTime:
+                  type: string
+                  example: "15:00:00"
+      responses:
+        "201":
+          description: Time slot created successfully.
+        "409":
+          description: Conflict - Provider already has a schedule conflict at this block.
+        "401":
+          description: Unauthorized.
+
+  /api/slots/available:
+    get:
+      tags:
+        - Time Slots
+      summary: View all unbooked time slots
+      description: Allows clients or visitors to look up unbooked availability windows.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: providerId
+          in: query
+          required: false
+          description: Filter time windows by provider identification ID
+          schema:
+            type: integer
+        - name: date
+          in: query
+          required: false
+          description: Filter slots by a specific date (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: List of open availability paths retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TimeSlot'
+
+  /api/appointments:
+    get:
+      tags:
+        - Appointments
+      summary: View my dashboard (Context-aware)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Success
+    post:
+      tags:
+        - Appointments
+      summary: Book an appointment (Clients Only)
+      description: Create a formalized appointment transaction linking a client to a service through an unbooked time slot.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - serviceId
+                - slotId
+              properties:
+                serviceId:
+                  type: integer
+                  example: 1
+                slotId:
+                  type: integer
+                  example: 2
+      responses:
+        "201":
+          description: Appointment successfully created, corresponding slot is flagged as booked.
+        "400":
+          description: Bad Request - Chosen availability is in the past.
+        "404":
+          description: Not Found - The designated Time Slot or Service does not exist.
+        "409":
+          description: Conflict - The slot has already been claimed by another transaction.
+
+  /api/appointments/{id}/status:
+    patch:
+      tags:
+        - Appointments
+      summary: Update appointment status (Providers Only)
+      description: Allows a provider to change the status of an appointment (e.g., to 'confirmed' or 'completed').
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the appointment to update
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [pending, confirmed, completed, cancelled]
+                  example: confirmed
+      responses:
+        '200':
+          description: Status updated successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+                  appointment:
+                    type: object
+                    properties:
+                      id: { type: integer }
+                      status: { type: string }
+        '403':
+          description: Forbidden - Only the service provider can update the status.
+        '404':
+          description: Appointment not found.
+
+  /api/appointments/{id}/cancel:
+    patch:
+      tags:
+        - Appointments
+      summary: Cancel an appointment
+      description: Allows a Client or Provider to cancel an existing appointment. This explicitly releases the linked time slot back into an unbooked availability pool.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the appointment to cancel
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Appointment cancelled successfully and time slot released.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+                  appointment:
+                    type: object
+                    properties:
+                      id: { type: integer }
+                      status: { type: string, example: "cancelled" }
+        '403':
+          description: Unauthorized - You can only cancel your own appointments.
+        '404':
+          description: Appointment not found.
